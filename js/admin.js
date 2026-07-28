@@ -32,8 +32,8 @@ const db = getFirestore(app);
 
 // ===================== Discord OAuth Config =====================
 
-const DISCORD_CLIENT_ID = "YOUR_DISCORD_CLIENT_ID";
-const DISCORD_REDIRECT_URI = window.location.origin + "/admin.html";
+const DISCORD_CLIENT_ID = "1530688923137999051";
+const DISCORD_REDIRECT_URI = window.location.origin + "/activate.html";
 
 // ===================== State =====================
 
