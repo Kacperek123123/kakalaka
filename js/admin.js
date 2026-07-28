@@ -12,10 +12,6 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  query,
-  orderBy,
-  limit,
-  where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -33,7 +29,7 @@ const db = getFirestore(app);
 // ===================== Discord OAuth Config =====================
 
 const DISCORD_CLIENT_ID = "1530688923137999051";
-const DISCORD_REDIRECT_URI = window.location.origin + "/activate.html";
+const DISCORD_REDIRECT_URI = window.location.origin + "/admin.html";
 
 // ===================== State =====================
 
@@ -57,15 +53,15 @@ function getDiscordLoginURL() {
     client_id: DISCORD_CLIENT_ID,
     redirect_uri: DISCORD_REDIRECT_URI,
     response_type: "token",
-    scope: "identify guilds",
-    state: state
+    scope: "identify",
+    state: state,
+    prompt: "none"
   });
 
   return "https://discord.com/api/oauth2/authorize?" + params.toString();
 }
 
 function parseDiscordToken() {
-  // Check URL hash for access token
   const hash = window.location.hash.substring(1);
   if (!hash) return null;
 
@@ -73,7 +69,6 @@ function parseDiscordToken() {
   const token = params.get("access_token");
   const state = params.get("state");
 
-  // Verify state
   const savedState = sessionStorage.getItem("discord_oauth_state");
   if (state && savedState && state !== savedState) {
     console.warn("[Admin] OAuth state mismatch - possible CSRF");
@@ -84,7 +79,6 @@ function parseDiscordToken() {
 
   if (token) {
     sessionStorage.setItem("discord_access_token", token);
-    // Clean URL
     window.history.replaceState({}, document.title, window.location.pathname);
   }
 
@@ -94,56 +88,20 @@ function parseDiscordToken() {
 async function fetchDiscordUser(token) {
   try {
     const response = await fetch("https://discord.com/api/v10/users/@me", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
+      headers: { Authorization: "Bearer " + token }
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch user");
-    }
-
+    if (!response.ok) return null;
     return await response.json();
   } catch (error) {
-    console.error("[Admin] Discord API error:", error);
     return null;
   }
 }
 
-async function fetchDiscordGuilds(token) {
-  try {
-    const response = await fetch("https://discord.com/api/v10/users/@me/guilds", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch guilds");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("[Admin] Discord guilds error:", error);
-    return [];
-  }
-}
-
 async function authenticate() {
-  // 1. Try to get token from URL hash (OAuth redirect)
   let token = parseDiscordToken();
+  if (!token) token = sessionStorage.getItem("discord_access_token");
+  if (!token) { showLogin(); return; }
 
-  // 2. Try from session storage
-  if (!token) {
-    token = sessionStorage.getItem("discord_access_token");
-  }
-
-  if (!token) {
-    showLogin();
-    return;
-  }
-
-  // 3. Fetch user data
   const user = await fetchDiscordUser(token);
   if (!user) {
     sessionStorage.removeItem("discord_access_token");
@@ -151,14 +109,9 @@ async function authenticate() {
     return;
   }
 
-  // 4. Check guild membership (optional)
-  const guilds = await fetchDiscordGuilds(token);
-
-  // 5. Store admin info
   adminUser = {
     id: user.id,
     username: user.username,
-    discriminator: user.discriminator,
     avatar: user.avatar
       ? "https://cdn.discordapp.com/avatars/" + user.id + "/" + user.avatar + ".png"
       : "https://cdn.discordapp.com/embed/avatars/0.png",
@@ -167,7 +120,6 @@ async function authenticate() {
 
   isAuthenticated = true;
 
-  // Cache auth
   try {
     localStorage.setItem("admin_session", JSON.stringify({
       user: adminUser,
@@ -184,20 +136,6 @@ function logout() {
   adminUser = null;
   sessionStorage.removeItem("discord_access_token");
   localStorage.removeItem("admin_session");
-
-  // Redirect to Discord revoke
-  const token = sessionStorage.getItem("discord_access_token");
-  if (token) {
-    fetch("https://discord.com/api/v10/oauth2/token/revoke", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        token: token,
-        client_id: DISCORD_CLIENT_ID
-      })
-    }).catch(() => {});
-  }
-
   showLogin();
 }
 
@@ -206,14 +144,12 @@ function logout() {
 function showLogin() {
   const loginSection = $("loginSection");
   const adminContent = $("adminContent");
-
   if (loginSection) loginSection.classList.remove("is-authenticated");
   if (adminContent) adminContent.classList.remove("is-authenticated");
 
-  // Check cached session
   try {
     const cached = JSON.parse(localStorage.getItem("admin_session") || "{}");
-    if (cached.user && (Date.now() - cached.time < 3600000)) { // 1h cache
+    if (cached.user && (Date.now() - cached.time < 3600000)) {
       adminUser = cached.user;
       isAuthenticated = true;
       showAdmin();
@@ -224,24 +160,20 @@ function showLogin() {
 
   const status = $("loginStatus");
   if (status) {
-    status.textContent = "Zaloguj się przez Discord, aby uzyskać dostęp do panelu.";
-    status.className = "status-message";
+    status.textContent = "Zaloguj sie przez Discord, aby uzyskac dostep do panelu.";
   }
 }
 
 function showAdmin() {
   const loginSection = $("loginSection");
   const adminContent = $("adminContent");
-
   if (loginSection) loginSection.classList.add("is-authenticated");
   if (adminContent) adminContent.classList.add("is-authenticated");
 
-  // Update user info
   if (adminUser) {
     const avatar = $("adminAvatar");
     const name = $("adminName");
     const badge = $("adminRoleBadge");
-
     if (avatar) avatar.src = adminUser.avatar;
     if (name) name.textContent = adminUser.global_name || adminUser.username;
     if (badge) {
@@ -250,8 +182,7 @@ function showAdmin() {
       badge.style.background = "rgba(88, 101, 242, 0.12)";
     }
   }
-
-  setStatus("Panel odblokowany. Możesz zarządzać kluczami.");
+  setStatus("Panel odblokowany. Mozesz zarzadzac kluczami.");
 }
 
 // ===================== Code Management =====================
@@ -294,7 +225,7 @@ function renderSummary(codes) {
   container.innerHTML = `
     <div class="summary-card"><strong>${total}</strong><span>Wszystkie</span></div>
     <div class="summary-card"><strong>${active}</strong><span>Aktywne</span></div>
-    <div class="summary-card"><strong>${used}</strong><span>Użyte</span></div>
+    <div class="summary-card"><strong>${used}</strong><span>Uzyte</span></div>
     <div class="summary-card"><strong>${premium}</strong><span>Premium</span></div>
   `;
 }
@@ -312,13 +243,13 @@ async function loadCodes() {
     renderSummary(rows);
 
     if (!rows.length) {
-      container.innerHTML = '<div class="empty-state">Brak kodów w bazie. Wygeneruj pierwszy klucz aktywacyjny.</div>';
+      container.innerHTML = '<div class="empty-state">Brak kodow w bazie. Wygeneruj pierwszy klucz aktywacyjny.</div>';
       return;
     }
 
     container.innerHTML = rows.map(item => {
       const planLabel = item.plan === "premium" ? "Premium" : "Basic";
-      const statusLabel = item.used ? "Użyty" : "Aktywny";
+      const statusLabel = item.used ? "Uzyty" : "Aktywny";
       const statusClass = item.used ? "badge--used" : "badge--active";
       const createdText = item.createdAt
         ? new Date(item.createdAt).toLocaleString("pl-PL", {
@@ -333,56 +264,46 @@ async function loadCodes() {
             <div>
               <div class="code-title">${item.nick || "Klient"}</div>
               <div class="code-value">${item.code || "---"}</div>
-            </div>
             <div class="badge ${statusClass}">${statusLabel}</div>
-          </div>
           <div class="code-meta">
             <div><span class="badge badge--plan">${planLabel}</span></div>
             <div>Utworzono: ${createdText}</div>
             ${item.note ? `<div>Notatka: ${item.note}</div>` : ""}
-            ${item.usedAt ? `<div>Użyto: ${new Date(item.usedAt).toLocaleString("pl-PL")}</div>` : ""}
+            ${item.usedAt ? `<div>Uzyto: ${new Date(item.usedAt).toLocaleString("pl-PL")}</div>` : ""}
           </div>
           <div class="code-actions">
             <button type="button" data-action="copy" data-id="${item.id}">Kopiuj</button>
-            <button type="button" data-action="delete" data-id="${item.id}" class="btn-danger-action">Usuń</button>
+            <button type="button" data-action="delete" data-id="${item.id}" class="btn-danger-action">Usun</button>
           </div>
-        </div>
       `;
     }).join("");
   } catch (error) {
-    console.error("[Admin] Load error:", error);
     const container = $("codes");
     if (container) {
-      container.innerHTML = '<div class="empty-state">Błąd ładowania kodów. Sprawdź Firebase.</div>';
+      container.innerHTML = '<div class="empty-state">Blad ladowania kodow.</div>';
     }
   }
 }
 
 async function generate() {
   if (!isAuthenticated) {
-    setStatus("Musisz być zalogowany, aby generować kody.", true);
+    setStatus("Musisz byc zalogowany.", true);
     return;
   }
 
-  const nickInput = $("nick");
-  const planSelect = $("planSelect");
-  const quantityInput = $("quantity");
-  const noteInput = $("note");
-
-  const nick = (nickInput?.value || "").trim();
-  const plan = planSelect?.value || "basic";
-  const quantity = Math.min(Math.max(parseInt(quantityInput?.value || "1", 10) || 1, 1), 20);
-  const note = (noteInput?.value || "").trim();
+  const nick = ($("nick")?.value || "").trim();
+  const plan = ($("planSelect")?.value || "basic");
+  const quantity = Math.min(Math.max(parseInt($("quantity")?.value || "1", 10) || 1, 1), 20);
+  const note = ($("note")?.value || "").trim();
 
   if (!nick) {
-    setStatus("Podaj nazwę klienta lub Discord.", true);
+    setStatus("Podaj nazwe klienta.", true);
     return;
   }
 
   try {
     const payloads = [];
     let lastCode = "";
-
     for (let i = 0; i < quantity; i++) {
       const code = formatCode(randomCode());
       lastCode = code;
@@ -392,70 +313,50 @@ async function generate() {
         plan: plan,
         note: note,
         used: false,
-        createdAt: new Date().toISOString(),
-        createdBy: adminUser?.username || "admin"
+        createdAt: new Date().toISOString()
       });
     }
-
     await Promise.all(payloads.map(item => addDoc(collection(db, "codes"), item)));
+    setStatus("Wygenerowano " + quantity + " kod(" + (quantity > 1 ? "y" : "") + ") dla " + nick);
 
-    setStatus(`Wygenerowano ${quantity} kod${quantity > 1 ? "y" : ""} dla ${nick}`);
-
-    // Show last generated key
     const display = $("generatedKeyDisplay");
     const value = $("generatedKeyValue");
     if (display && value) {
       display.style.display = "block";
       value.textContent = lastCode;
     }
-
-    // Clear inputs
-    if (nickInput) nickInput.value = "";
-    if (quantityInput) quantityInput.value = "1";
-    if (noteInput) noteInput.value = "";
-
+    if ($("nick")) $("nick").value = "";
+    if ($("quantity")) $("quantity").value = "1";
+    if ($("note")) $("note").value = "";
     await loadCodes();
   } catch (error) {
-    console.error(error);
-    setStatus("Nie udało się wygenerować kodów. Sprawdź Firebase.", true);
+    setStatus("Nie udalo sie wygenerowac kodow.", true);
   }
 }
 
 async function deleteCode(id) {
-  if (!isAuthenticated) {
-    setStatus("Musisz być zalogowany.", true);
-    return;
-  }
-
-  if (!confirm("Czy na pewno usunąć ten kod?")) return;
-
+  if (!isAuthenticated) { setStatus("Musisz byc zalogowany.", true); return; }
+  if (!confirm("Czy na pewno usunac ten kod?")) return;
   try {
     await deleteDoc(doc(db, "codes", id));
-    setStatus("Kod został usunięty.");
+    setStatus("Kod usuniety.");
     await loadCodes();
   } catch (error) {
-    console.error(error);
-    setStatus("Nie udało się usunąć kodu.", true);
+    setStatus("Nie udalo sie usunac kodu.", true);
   }
 }
 
 async function copyCode(id) {
-  const item = document.querySelector(`[data-id="${id}"]`);
+  const item = document.querySelector('[data-id="' + id + '"]');
   const codeValue = item?.closest(".code-item")?.querySelector(".code-value")?.textContent;
-  if (!codeValue) {
-    setStatus("Nie znaleziono kodu.", true);
-    return;
-  }
-
+  if (!codeValue) { setStatus("Nie znaleziono kodu.", true); return; }
   try {
     await navigator.clipboard.writeText(codeValue);
-    setStatus("Kod skopiowany do schowka.");
+    setStatus("Kod skopiowany.");
   } catch (error) {
-    setStatus("Nie udało się skopiować kodu.", true);
+    setStatus("Blad kopiowania.", true);
   }
 }
-
-// ===================== Event Binding =====================
 
 function bindEvents() {
   const genBtn = $("genBtn");
@@ -464,54 +365,28 @@ function bindEvents() {
   const logoutBtn = $("logoutBtn");
   const copyKeyBtn = $("copyKeyBtn");
 
-  if (genBtn) {
-    genBtn.addEventListener("click", generate);
-  }
-
-  if (discordBtn) {
-    discordBtn.addEventListener("click", () => {
-      window.location.href = getDiscordLoginURL();
-    });
-  }
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", logout);
-  }
-
-  if (copyKeyBtn) {
-    copyKeyBtn.addEventListener("click", async () => {
-      const value = $("generatedKeyValue");
-      if (value && value.textContent) {
-        try {
-          await navigator.clipboard.writeText(value.textContent);
-          setStatus("Kod skopiowany!");
-        } catch (e) {
-          setStatus("Błąd kopiowania.", true);
-        }
-      }
-    });
-  }
-
+  if (genBtn) genBtn.addEventListener("click", generate);
+  if (discordBtn) discordBtn.addEventListener("click", () => { window.location.href = getDiscordLoginURL(); });
+  if (logoutBtn) logoutBtn.addEventListener("click", logout);
+  if (copyKeyBtn) copyKeyBtn.addEventListener("click", async () => {
+    const value = $("generatedKeyValue");
+    if (value && value.textContent) {
+      try { await navigator.clipboard.writeText(value.textContent); setStatus("Kod skopiowany!"); }
+      catch (e) { setStatus("Blad kopiowania.", true); }
+    }
+  });
   if (codesContainer) {
     codesContainer.addEventListener("click", async (event) => {
       const button = event.target.closest("button[data-action]");
       if (!button) return;
-
       const action = button.getAttribute("data-action");
       const id = button.getAttribute("data-id");
       if (!id) return;
-
-      if (action === "delete") {
-        await deleteCode(id);
-      } else if (action === "copy") {
-        await copyCode(id);
-      }
+      if (action === "delete") await deleteCode(id);
+      else if (action === "copy") await copyCode(id);
     });
   }
 }
 
-// ===================== Init =====================
-
 bindEvents();
 authenticate();
-
