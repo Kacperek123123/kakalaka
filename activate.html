@@ -1,24 +1,19 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#06101e" />
-    <title>Aktywacja aplikacji | mObywatel</title>
+    <meta name="theme-color" content="#0a0e17" />
+    <title>Aktywacja | xObywatel</title>
 
     <script>
       (function () {
         try {
           var stored = localStorage.getItem("theme-preference");
-          var prefersDark =
-            window.matchMedia &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
           var theme = stored || (prefersDark ? "dark" : "light");
           document.documentElement.setAttribute("data-theme", theme);
         } catch (e) {}
@@ -26,647 +21,328 @@
     </script>
 
     <style>
-      :root {
-        color-scheme: dark;
-        --bg: #030712;
-        --bg-accent: #09182b;
-        --surface: rgba(9, 16, 29, 0.9);
-        --surface-strong: rgba(13, 22, 40, 0.95);
-        --border: rgba(255, 255, 255, 0.08);
-        --border-strong: rgba(151, 212, 255, 0.2);
-        --text: #f9fbff;
-        --muted: #92a5bf;
-        --accent: #4cc9f0;
-        --accent-strong: #2563eb;
-        --accent-2: #7c3aed;
-        --success: #34d399;
-        --danger: #fb7185;
-        --shadow: 0 24px 70px rgba(2, 6, 23, 0.45);
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      :root{
+        --bg:#0a0e17;
+        --card:#111827;
+        --card-border:rgba(255,255,255,0.06);
+        --text:#f1f5f9;
+        --muted:#8899b4;
+        --accent:#3b82f6;
+        --accent-hover:#2563eb;
+        --success:#22c55e;
+        --danger:#ef4444;
+        --radius:16px;
+        --radius-sm:10px;
+        --shadow:0 8px 32px rgba(0,0,0,0.3)
+      }
+      html{background:var(--bg);-webkit-text-size-adjust:100%}
+      body{
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+        background:var(--bg);
+        color:var(--text);
+        padding:0 0 32px 0;
+        min-height:100vh;
+        -webkit-font-smoothing:antialiased
+      }
+      .wrap{max-width:480px;margin:0 auto;padding:0 16px}
+
+      /* Header */
+      .hdr{
+        display:flex;align-items:center;gap:12px;
+        padding:16px 0 8px;
+        position:sticky;top:0;z-index:10;
+        background:var(--bg)
+      }
+      .hdr-icon{
+        width:40px;height:40px;border-radius:12px;
+        background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+        display:flex;align-items:center;justify-content:center;
+        font-size:20px;color:#fff;flex-shrink:0
+      }
+      .hdr h1{font-size:20px;font-weight:700;letter-spacing:-0.3px}
+      .hdr .pill{
+        margin-left:auto;
+        font-size:11px;font-weight:600;
+        padding:4px 10px;border-radius:999px;
+        background:rgba(34,197,94,0.12);color:#86efac;
+        white-space:nowrap
       }
 
-      * { box-sizing: border-box; }
-      html { background: var(--bg); }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: Inter, "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
-        background: radial-gradient(circle at top left, rgba(76, 201, 240, 0.2), transparent 28%),
-          linear-gradient(140deg, var(--bg), var(--bg-accent));
-        color: var(--text);
-        padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
-        -webkit-font-smoothing: antialiased;
+      /* Status card */
+      .st-card{
+        display:flex;gap:12px;align-items:flex-start;
+        padding:14px;border-radius:var(--radius);
+        background:var(--card);border:1px solid var(--card-border);
+        margin-bottom:12px
       }
-
-      .app-shell {
-        width: min(100%, 1120px);
-        margin: 0 auto;
-        display: grid;
-        gap: 16px;
+      .st-dot{
+        width:10px;height:10px;border-radius:50%;
+        background:var(--accent);flex-shrink:0;margin-top:3px;
+        box-shadow:0 0 0 4px rgba(59,130,246,0.12)
       }
+      .st-card.good .st-dot{background:var(--success);box-shadow:0 0 0 4px rgba(34,197,94,0.12)}
+      .st-card.bad .st-dot{background:var(--danger);box-shadow:0 0 0 4px rgba(239,68,68,0.12)}
+      .st-card h3{font-size:15px;margin-bottom:3px}
+      .st-card p{font-size:13px;color:var(--muted);line-height:1.5}
 
-      .hero-card,
-      .panel-card,
-      .status-card,
-      .step-card,
-      .modal-card,
-      .btn {
-        animation: riseIn 0.3s ease both;
+      /* Cards */
+      .card{
+        background:var(--card);border:1px solid var(--card-border);
+        border-radius:var(--radius);padding:18px;
+        margin-bottom:12px
       }
+      .card-title{font-size:16px;font-weight:700;margin-bottom:4px}
+      .card-sub{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
 
-      .hero-card {
-        background: linear-gradient(135deg, rgba(10, 20, 38, 0.96), rgba(15, 29, 56, 0.95));
-        border: 1px solid var(--border);
-        border-radius: 26px;
-        padding: 20px;
-        box-shadow: var(--shadow);
-        display: grid;
-        gap: 14px;
+      /* Sections */
+      .s-row{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+      .s-avatar{
+        width:44px;height:44px;border-radius:50%;flex-shrink:0;
+        display:flex;align-items:center;justify-content:center;
+        background:linear-gradient(135deg,var(--accent),#1d4ed8);
+        color:#fff;font-size:18px;font-weight:700
       }
+      .s-info strong{display:block;font-size:14px}
+      .s-info span{font-size:12px;color:var(--muted)}
 
-      .hero-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
+      /* Form */
+      .f-group{margin-bottom:14px}
+      .f-label{
+        display:block;font-size:11px;font-weight:700;
+        letter-spacing:0.05em;text-transform:uppercase;
+        color:#94a3b8;margin-bottom:6px
       }
-
-      .hero-title {
-        margin: 0 0 8px;
-        font-size: clamp(1.35rem, 3vw, 1.9rem);
-        font-weight: 800;
-        letter-spacing: -0.02em;
+      .f-row{display:flex;gap:8px}
+      .f-row .f-inp{flex:1}
+      .f-inp,.f-sel{
+        width:100%;padding:12px 14px;font-size:15px;
+        border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,0.08);
+        background:rgba(0,0,0,0.3);color:var(--text);font-family:inherit
       }
-
-      .hero-subtitle {
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.65;
-        font-size: 0.95rem;
-        max-width: 720px;
+      .f-inp:focus,.f-sel:focus{
+        outline:none;border-color:rgba(59,130,246,0.5);
+        box-shadow:0 0 0 3px rgba(59,130,246,0.1)
       }
+      .f-sel{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238899b4' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
 
-      .hero-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
+      /* Buttons */
+      .btn{
+        display:inline-flex;align-items:center;justify-content:center;gap:6px;
+        padding:12px 18px;border-radius:999px;font-size:14px;font-weight:700;
+        border:0;cursor:pointer;text-decoration:none;
+        transition:transform .15s,box-shadow .15s
       }
-
-      .hero-badge {
-        padding: 7px 10px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        color: #dcedff;
-        font-size: 0.74rem;
-        font-weight: 700;
+      .btn:active{transform:scale(.97)}
+      .btn-block{width:100%}
+      .btn-pri{
+        background:linear-gradient(135deg,var(--accent),#1d4ed8);
+        color:#fff;box-shadow:0 8px 20px rgba(59,130,246,0.2)
       }
-
-      .hero-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+      .btn-pri:disabled{opacity:.6}
+      .btn-sec{
+        background:rgba(255,255,255,0.04);color:var(--text);
+        border:1px solid rgba(255,255,255,0.06)
       }
+      .btn-small{padding:8px 14px;font-size:13px}
 
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        background: rgba(255, 255, 255, 0.05);
-        color: #ecf6ff;
-        white-space: nowrap;
+      .f-err{
+        display:none;margin-top:10px;
+        font-size:13px;color:var(--danger);
+        background:rgba(239,68,68,0.08);
+        padding:10px 12px;border-radius:var(--radius-sm)
       }
+      .f-err.show{display:block}
 
-      .pill--success {
-        background: rgba(52, 211, 153, 0.14);
-        color: #bdffd6;
-        border-color: rgba(52, 211, 153, 0.24);
+      /* Features & Steps */
+      .flist{display:grid;gap:8px;margin-bottom:14px}
+      .fi{
+        display:flex;gap:10px;font-size:13px;color:var(--muted);line-height:1.5
       }
+      .fi::before{content:"•";color:var(--accent);font-weight:700}
 
-      .panel-grid {
-        display: grid;
-        gap: 16px;
+      .step-list{display:grid;gap:10px}
+      .step{
+        padding:12px;border-radius:var(--radius-sm);
+        border:1px solid rgba(255,255,255,0.05);
+        background:rgba(255,255,255,0.02)
       }
+      .step strong{display:block;font-size:14px;margin-bottom:3px}
+      .step p{font-size:13px;color:var(--muted);line-height:1.5;margin:0}
 
-      .panel-card,
-      .status-card {
-        background: linear-gradient(135deg, rgba(10, 19, 33, 0.94), rgba(12, 24, 42, 0.95));
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        padding: 18px;
-        box-shadow: var(--shadow);
+      /* App list */
+      .alist{display:grid;gap:8px}
+      .ai{
+        display:flex;align-items:center;justify-content:space-between;gap:10px;
+        padding:12px;border-radius:var(--radius-sm);
+        border:1px solid rgba(255,255,255,0.06)
       }
-
-      .section-title {
-        margin: 0 0 8px;
-        font-size: 1rem;
-        font-weight: 700;
-        color: #f8fbff;
+      .ai.on{border-color:rgba(59,130,246,0.25);background:rgba(59,130,246,0.06)}
+      .ai-l{display:flex;align-items:flex-start;gap:10px}
+      .ai-i{
+        width:32px;height:32px;border-radius:8px;flex-shrink:0;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(255,255,255,0.06);font-size:16px
       }
-
-      .section-subtitle {
-        margin: 0 0 12px;
-        color: var(--muted);
-        font-size: 0.9rem;
-        line-height: 1.6;
+      .ai-l h4{font-size:14px;margin-bottom:2px}
+      .ai-l p{font-size:12px;color:var(--muted);margin:0}
+      .ai-b{
+        padding:4px 8px;border-radius:999px;
+        font-size:11px;font-weight:700;white-space:nowrap;
+        background:rgba(255,255,255,0.05);color:var(--muted)
       }
+      .ai.on .ai-b{background:rgba(59,130,246,0.12);color:#93c5fd}
 
-      .profile-card {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+      /* Modal */
+      .modal{
+        position:fixed;inset:0;z-index:1000;
+        display:none;align-items:center;justify-content:center;padding:20px
       }
-
-      .avatar {
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-        color: white;
-        font-size: 1.05rem;
-        font-weight: 800;
-        flex-shrink: 0;
+      .modal.on{display:flex}
+      .modal-b{
+        position:absolute;inset:0;
+        background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)
       }
-
-      .profile-meta strong {
-        display: block;
-        color: #f4f8ff;
-        font-size: 0.95rem;
+      .modal-c{
+        position:relative;width:100%;max-width:360px;
+        padding:24px;border-radius:var(--radius);
+        background:linear-gradient(135deg,rgba(17,24,39,.98),rgba(20,28,48,.98));
+        border:1px solid var(--card-border)
       }
+      .modal-c h3{font-size:18px;margin-bottom:4px}
+      .modal-c p{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+      .modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 
-      .profile-meta span {
-        color: var(--muted);
-        font-size: 0.82rem;
+      /* Animation */
+      @keyframes up{
+        from{opacity:0;transform:translateY(8px)}
+        to{opacity:1;transform:translateY(0)}
       }
-
-      .feature-list {
-        display: grid;
-        gap: 8px;
-        margin-top: 12px;
-      }
-
-      .feature-item {
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-        color: var(--muted);
-        font-size: 0.9rem;
-        line-height: 1.5;
-      }
-
-      .feature-item::before {
-        content: "•";
-        color: var(--accent);
-        font-size: 1rem;
-      }
-
-      .status-card {
-        display: flex;
-        gap: 12px;
-        align-items: flex-start;
-      }
-
-      .status-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
-        background: var(--accent);
-        margin-top: 3px;
-        box-shadow: 0 0 0 6px rgba(76, 201, 240, 0.12);
-        flex-shrink: 0;
-      }
-
-      .status-card h3 {
-        margin: 0 0 6px;
-        font-size: 0.98rem;
-      }
-
-      .status-card p {
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.6;
-        font-size: 0.9rem;
-      }
-
-      .status-card.is-success .status-dot {
-        background: var(--success);
-        box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.14);
-      }
-
-      .status-card.is-error .status-dot {
-        background: var(--danger);
-        box-shadow: 0 0 0 6px rgba(251, 113, 133, 0.16);
-      }
-
-      .form-group {
-        display: grid;
-        gap: 8px;
-        margin-top: 14px;
-      }
-
-      .label {
-        font-size: 0.76rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #a9c4e0;
-      }
-
-      .input,
-      .select {
-        width: 100%;
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        border-radius: 14px;
-        padding: 13px 14px;
-        font-size: 0.95rem;
-        font-family: inherit;
-        background: rgba(5, 10, 18, 0.86);
-        color: var(--text);
-      }
-
-      .input:focus,
-      .select:focus {
-        outline: none;
-        border-color: rgba(76, 201, 240, 0.45);
-        box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.13);
-      }
-
-      .input-row {
-        display: flex;
-        gap: 10px;
-      }
-
-      .btn {
-        border: 0;
-        border-radius: 999px;
-        padding: 12px 14px;
-        font-size: 0.92rem;
-        font-weight: 700;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-      }
-
-      .btn:hover { transform: translateY(-1px); }
-      .btn:active { transform: translateY(0); }
-      .btn:disabled {
-        opacity: 0.7;
-        cursor: wait;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-        color: white;
-        box-shadow: 0 12px 30px rgba(37, 99, 235, 0.2);
-      }
-
-      .btn-secondary {
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--text);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .form-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 16px;
-      }
-
-      .helper-text {
-        margin-top: 8px;
-        color: var(--muted);
-        font-size: 0.84rem;
-        line-height: 1.6;
-      }
-
-      .error {
-        color: var(--danger);
-        font-size: 0.9rem;
-        margin-top: 10px;
-        display: none;
-      }
-
-      .error.show { display: block; }
-
-      .steps-grid {
-        display: grid;
-        gap: 12px;
-        margin-top: 10px;
-      }
-
-      .step-card {
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 18px;
-        padding: 14px;
-        background: rgba(255, 255, 255, 0.03);
-      }
-
-      .step-card strong {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
-        color: #f8fbff;
-      }
-
-      .step-card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.88rem;
-        line-height: 1.55;
-      }
-
-      .modal {
-        position: fixed;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        z-index: 10000;
-      }
-
-      .modal.is-open { display: flex; }
-
-      .modal__backdrop {
-        position: absolute;
-        inset: 0;
-        background: rgba(2, 6, 23, 0.72);
-        backdrop-filter: blur(6px);
-      }
-
-      .modal-card {
-        position: relative;
-        width: min(100%, 420px);
-        border-radius: 22px;
-        padding: 20px;
-        background: linear-gradient(135deg, rgba(12, 20, 38, 0.97), rgba(14, 26, 47, 0.98));
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: var(--shadow);
-      }
-
-      .modal-card h3 {
-        margin: 0 0 6px;
-        font-size: 1.15rem;
-      }
-
-      .modal-card p {
-        margin: 0 0 10px;
-        color: var(--muted);
-        font-size: 0.9rem;
-        line-height: 1.6;
-      }
-
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 14px;
-      }
-
-      .app-list {
-        display: grid;
-        gap: 10px;
-        margin-top: 14px;
-      }
-
-      .app-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 14px;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
-      }
-
-      .app-card.active {
-        border-color: rgba(76, 201, 240, 0.32);
-        background: linear-gradient(135deg, rgba(76, 201, 240, 0.14), rgba(37, 99, 235, 0.14));
-      }
-
-      .app-copy {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-      }
-
-      .app-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
-        background: rgba(255, 255, 255, 0.08);
-        color: var(--accent);
-        font-weight: 800;
-        flex-shrink: 0;
-      }
-
-      .app-copy h4 {
-        margin: 0 0 4px;
-        font-size: 0.95rem;
-        color: #f8fbff;
-      }
-
-      .app-copy p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 0.84rem;
-        line-height: 1.5;
-      }
-
-      .app-badge {
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 0.74rem;
-        font-weight: 700;
-        color: var(--muted);
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .app-badge.active {
-        color: #bdeffb;
-        border-color: rgba(76, 201, 240, 0.25);
-        background: rgba(76, 201, 240, 0.12);
-      }
-
-      @keyframes riseIn {
-        from { opacity: 0; transform: translateY(8px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      @media (min-width: 860px) {
-        .panel-grid {
-          grid-template-columns: 0.95fr 1.05fr;
-          align-items: start;
-        }
-      }
+      .card,.st-card,.step,.ai{animation:up .3s ease both}
     </style>
 
     <script src="js/theme.js" defer></script>
     <script src="js/update-checker.js" defer></script>
-    <script type="module" src="js/pages/activate.js" defer></script>
+<script type="module" src="js/pages/activate.js" defer></script>
+    <script type="module" src="js/images.js" defer></script>
   </head>
   <body>
-    <div class="app-shell">
-      <section class="hero-card">
-        <div class="hero-top">
-          <div>
-            <h1 class="hero-title">Aktywuj aplikację i uruchom pełny dostęp</h1>
-            <p class="hero-subtitle">
-              Profesjonalny onboarding dla klienta: szybki start, jasny proces i pełna kontrola nad dostępem. Ten ekran jest pierwszym punktem kontaktu z produktem — dlatego projektujemy go tak, aby budował zaufanie od pierwszych sekund.
-            </p>
-            <div class="hero-badges">
-              <span class="hero-badge">Premium onboarding</span>
-              <span class="hero-badge">Bezpieczna aktywacja</span>
-              <span class="hero-badge">Szybki start</span>
-            </div>
-          </div>
-          <span class="pill pill--success">● Gotowe do sprzedaży</span>
-        </div>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="login.html">Przejdź do logowania</a>
-          <a class="btn btn-secondary" href="profiledata.html">Zobacz profil</a>
-        </div>
-      </section>
+    <div class="wrap">
+      <!-- Header -->
+      <div class="hdr">
+        <div class="hdr-icon">🔐</div>
+        <h1>Aktywacja</h1>
+        <span class="pill">v4.0</span>
+      </div>
 
-      <section class="status-card" id="activationStatusCard">
-        <div class="status-dot"></div>
+      <!-- Status -->
+      <div class="st-card" id="activationStatusCard">
+        <div class="st-dot"></div>
         <div>
-          <h3 id="activationStatusTitle">Przygotowanie do aktywacji</h3>
-          <p id="activationStatusText">Wprowadź klucz aktywacyjny, wybierz wariant aplikacji i rozpocznij swoją ścieżkę dostępu.</p>
+          <h3 id="activationStatusTitle">Witaj w xObywatel</h3>
+          <p id="activationStatusText">Wprowadź klucz i wybierz pakiet, aby rozpocząć.</p>
         </div>
-      </section>
+      </div>
 
-      <section class="panel-card">
-        <div class="panel-grid">
-          <div>
-            <h2 class="section-title">Twoje konto i pakiet</h2>
-            <p class="section-subtitle">Połącz konto Discord, zaktualizuj profil i trzymaj wszystko w jednym miejscu.</p>
+      <!-- Main Card -->
+      <div class="card">
+        <div class="card-title">Aktywuj dostęp</div>
+        <div class="card-sub">Wpisz kod aktywacyjny, wybierz wariant i ciesz się aplikacją.</div>
 
-            <div class="profile-card">
-              <div class="avatar" id="discordAvatar">U</div>
-              <div class="profile-meta">
-                <strong id="discordName">Konto Discord</strong>
-                <span id="discordStatus">Nie połączono jeszcze</span>
-              </div>
-            </div>
-
-            <div class="feature-list">
-              <div class="feature-item">Szybka aktywacja bez zbędnych kroków.</div>
-              <div class="feature-item">Wybór pakietu Basic lub Premium dopasowany do klienta.</div>
-              <div class="feature-item">Komfortowy start z jasnym komunikatem o statusie.</div>
-            </div>
-
-            <div class="form-group">
-              <label class="label">Discord</label>
-              <div class="form-actions">
-                <button type="button" id="discordLoginBtn" class="btn btn-primary">Połącz konto</button>
-              </div>
-              <p class="helper-text">Uzupełnij nazwę użytkownika i zachowaj spójne dane w całym procesie aktywacji.</p>
+        <form id="activateForm">
+          <div class="f-group">
+            <label class="f-label" for="adminKeyInput">Klucz aktywacyjny</label>
+            <div class="f-row">
+              <input id="adminKeyInput" class="f-inp f-row-inp" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />
+              <button type="button" id="pasteButton" class="btn btn-sec btn-small">Wklej</button>
             </div>
           </div>
 
-          <div>
-            <h2 class="section-title">Aktywuj aplikację</h2>
-            <p class="section-subtitle">Wpisz kod, wybierz wariant i uruchom dostęp do produktu w kilka sekund.</p>
-
-            <form id="activateForm">
-              <div class="form-group">
-                <label class="label" for="adminKeyInput">Klucz aktywacyjny</label>
-                <div class="input-row">
-                  <input id="adminKeyInput" class="input" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />
-                  <button type="button" id="pasteButton" class="btn btn-secondary">Wklej</button>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="label" for="deviceLabelInput">Nazwa urządzenia</label>
-                <input id="deviceLabelInput" class="input" placeholder="np. Pixel 8 / iPhone 15" autocomplete="off" />
-              </div>
-
-              <div class="form-group">
-                <label class="label" for="planSelect">Wariant aplikacji</label>
-                <select id="planSelect" class="select">
-                  <option value="basic">Basic</option>
-                  <option value="premium">Premium</option>
-                </select>
-              </div>
-
-              <div class="form-actions">
-                <button type="submit" id="activateSubmitButton" class="btn btn-primary">Aktywuj aplikację</button>
-              </div>
-
-              <div id="keyError" class="error">Nieprawidłowy klucz lub brak danych.</div>
-            </form>
+          <div class="f-group">
+            <label class="f-label" for="deviceLabelInput">Nazwa urządzenia</label>
+            <input id="deviceLabelInput" class="f-inp" placeholder="np. Pixel 8" autocomplete="off" />
           </div>
-        </div>
-      </section>
 
-      <section class="panel-card">
-        <h2 class="section-title">Jak to działa</h2>
-        <p class="section-subtitle">Proces został zaprojektowany tak, by wyglądał profesjonalnie zarówno dla klienta, jak i dla sprzedawcy.</p>
-        <div class="steps-grid">
-          <div class="step-card">
+          <div class="f-group">
+            <label class="f-label" for="planSelect">Pakiet</label>
+            <select id="planSelect" class="f-sel">
+              <option value="basic">Basic</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
+
+          <button type="submit" id="activateSubmitButton" class="btn btn-pri btn-block">Aktywuj</button>
+
+          <div id="keyError" class="f-err">Nieprawidłowy klucz.</div>
+        </form>
+      </div>
+
+      <!-- Discord -->
+      <div class="card">
+        <div class="card-title">Konto Discord</div>
+        <div class="card-sub">Połącz konto, aby śledzić aktywację.</div>
+
+        <div class="s-row">
+          <div class="s-avatar" id="discordAvatar">U</div>
+          <div class="s-info">
+            <strong id="discordName">Discord</strong>
+            <span id="discordStatus">Nie połączono</span>
+          </div>
+          <button type="button" id="discordLoginBtn" class="btn btn-sec btn-small" style="margin-left:auto">Połącz</button>
+        </div>
+
+        <div class="flist">
+          <div class="fi">Szybka aktywacja bez zbędnych kroków</div>
+          <div class="fi">Wybór pakietu Basic lub Premium</div>
+        </div>
+      </div>
+
+      <!-- How it works -->
+      <div class="card">
+        <div class="card-title">Jak to działa</div>
+        <div class="card-sub">Prosty proces w 3 krokach.</div>
+        <div class="step-list">
+          <div class="step">
             <strong>1. Wprowadź klucz</strong>
-            <p>Klient otrzymuje kod aktywacyjny, który jest weryfikowany i przypisywany do konkretnego urządzenia.</p>
+            <p>Otrzymany kod aktywacyjny jest weryfikowany i przypisywany do urządzenia.</p>
           </div>
-          <div class="step-card">
+          <div class="step">
             <strong>2. Wybierz pakiet</strong>
-            <p>Basic lub Premium — oba warianty są od razu widoczne i łatwe do zrozumienia.</p>
+            <p>Basic lub Premium — wybierz to, czego potrzebujesz.</p>
           </div>
-          <div class="step-card">
-            <strong>3. Zaloguj się do aplikacji</strong>
-            <p>Po zakończeniu aktywacji użytkownik trafia do logowania, gdzie może od razu korzystać z produktu.</p>
+          <div class="step">
+            <strong>3. Gotowe!</strong>
+            <p>Po aktywacji przejdziesz do logowania i od razu zaczniesz korzystać.</p>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section class="panel-card">
-        <h2 class="section-title">Pakiety dostępne po aktywacji</h2>
-        <p class="section-subtitle">To jest punkt, w którym klient widzi wartość produktu i wybiera wariant zgodny z jego potrzebami.</p>
-        <div class="app-list" id="appList"></div>
-      </section>
+      <!-- Packages -->
+      <div class="card">
+        <div class="card-title">Dostępne pakiety</div>
+        <div class="card-sub">Wybierz wariant dopasowany do potrzeb.</div>
+        <div class="alist" id="appList"></div>
+      </div>
     </div>
 
+    <!-- Discord Modal -->
     <div id="discordModal" class="modal" aria-hidden="true">
-      <div class="modal__backdrop" data-close-modal></div>
-      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="discordModalTitle">
-        <h3 id="discordModalTitle">Dodaj nazwę użytkownika Discord</h3>
-        <p>Wpisz nazwę, która będzie widoczna w panelu aktywacji i ułatwi komunikację z klientem.</p>
+      <div class="modal-b" data-close-modal></div>
+      <div class="modal-c" role="dialog" aria-modal="true">
+        <h3>Nazwa Discord</h3>
+        <p>Wpisz swoją nazwę użytkownika Discord.</p>
         <form id="discordForm">
-          <div class="form-group">
-            <label class="label" for="discordNameInput">Nazwa Discord</label>
-            <input id="discordNameInput" class="input" placeholder="np. user_123" autocomplete="off" />
+          <div class="f-group">
+            <input id="discordNameInput" class="f-inp" placeholder="np. user_123" autocomplete="off" />
           </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
-            <button type="submit" class="btn btn-primary">Zapisz</button>
+          <div class="modal-acts">
+            <button type="button" class="btn btn-sec btn-small" data-close-modal>Anuluj</button>
+            <button type="submit" class="btn btn-pri btn-small">Zapisz</button>
           </div>
         </form>
       </div>
     </div>
 
-    <script type="module" src="js/images.js"></script>
-  </body>
+</body>
 </html>
 
