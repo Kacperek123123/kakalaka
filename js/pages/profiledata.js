@@ -359,6 +359,16 @@ function saveData() {
       "Brak"
     );
 
+    // ZAPISZ ZDJECIE PROFILOWE
+    try {
+      var profileImg = document.getElementById("profileImage");
+      if (profileImg && profileImg.src && profileImg.src.indexOf("data:image") === 0) {
+        localStorage.setItem("profileImage", profileImg.src);
+        localStorage.setItem("profileImageData", profileImg.src);
+        localStorage.setItem("photo", profileImg.src);
+      }
+    } catch (e) {}
+
     // 🔥 OZNACZENIE PROFILU JAKO UZUPEŁNIONY + PRZEKIEROWANIE DO LOGOWANIA
     localStorage.setItem("profile_completed", "true");
     window.location.href = "login.html";
