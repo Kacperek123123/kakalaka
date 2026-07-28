@@ -1,63 +1,137 @@
 /**
- * images.js - Secure analytics with minimal data
- * Tylko niezbędne dane, bez fingerprintingu canvas
+ * images.js - Profilowe zdjecie i Firebase logs
+ * UWAGA: Ten plik jest ladowany jako zwykly script (nie modul)!
+ * Dlatego nie moze uzywac statycznego import - uzywa dynamicznego import()
  */
 
-(function () {
-  "use strict";
+// ===================== PROFILOWE ZDJECIE =====================
 
-  // Only send in production and once per session
-  if (window.DEV_CONFIG && window.DEV_CONFIG.DEV_MODE) return;
-  if (sessionStorage.getItem("_img_logged")) return;
-
-  var firebaseConfig = {
-    apiKey: "AIzaSyBnRiQrdboAfjAFoBLj37A8QoIIezqrbVk",
-    authDomain: "bobywatelkody.firebaseapp.com",
-    databaseURL: "https://bobywatelkody-default-rtdb.firebaseio.com",
-    projectId: "bobywatelkody",
-    storageBucket: "bobywatelkody.firebasestorage.app",
-    messagingSenderId: "941487075648",
-    appId: "1:941487075648:web:40d8a374d293c16d56caa5"
-  };
-
-  // Minimal data collection
-  function collectMinimalData() {
-    return {
-      t: new Date().toISOString(),
-      p: window.location.pathname,
-      r: document.referrer ? document.referrer.substring(0, 100) : "",
-      v: "4.0"
-    };
-  }
-
-  // Send via beacon (non-blocking)
+// Funkcja do cachowania zdjecia
+async function cacheProfileImage(imageData) {
   try {
-    var data = collectMinimalData();
-    var payload = JSON.stringify(data);
-
-    // Use sendBeacon for reliability
-    if (navigator.sendBeacon) {
-      var blob = new Blob([payload], { type: "application/json" });
-      navigator.sendBeacon(
-        "https://bobywatelkody-default-rtdb.firebaseio.com/logs.json",
-        blob
-      );
-    } else {
-      // Fallback to fetch
-      fetch(
-        "https://bobywatelkody-default-rtdb.firebaseio.com/logs.json",
-        {
-          method: "POST",
-          body: payload,
-          headers: { "Content-Type": "application/json" },
-          mode: "no-cors"
-        }
-      ).catch(function () {});
-    }
-
-    sessionStorage.setItem("_img_logged", "1");
-  } catch (e) {
-    // Silent fail - analytics nie są krytyczne
+    localStorage.setItem("profileImage", imageData);
+    try {
+      var cache = await caches.open("profile-images-v1");
+      var blob = await fetch(imageData).then(function (r) { return r.blob(); });
+      await cache.put("profile-image", new Response(blob, {
+        headers: { "Content-Type": "image/jpeg" }
+      }));
+    } catch (cacheErr) {}
+  } catch (err) {
+    console.log("Blad zapisu zdjecia:", err);
   }
+}
+
+// Funkcja do ladowania zdjecia z cache
+async function loadCachedProfileImage() {
+  try {
+    var img = document.getElementById("profileImage");
+    if (!img) return;
+
+    // Najpierw Cache API
+    try {
+      var cache = await caches.open("profile-images-v1");
+      var cachedResponse = await cache.match("profile-image");
+      if (cachedResponse) {
+        var blob = await cachedResponse.blob();
+        var objectURL = URL.createObjectURL(blob);
+        img.src = objectURL;
+        img.style.opacity = "1";
+        return;
+      }
+    } catch (cacheErr) {}
+
+    // Fallback do localStorage
+    var savedImage = localStorage.getItem("profileImage");
+    if (savedImage) {
+      img.src = savedImage;
+      img.style.opacity = "1";
+      await cacheProfileImage(savedImage);
+    }
+  } catch (e) {
+    console.error("Blad ladowania zdjecia:", e);
+  }
+}
+
+// Input zmiany zdjecia (profiledata.html)
+(function () {
+  try {
+    var imageInput = document.getElementById("imageInput");
+    if (imageInput) {
+      imageInput.addEventListener("change", function (event) {
+        var file = event.target.files && event.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = async function (e) {
+          var imageUrl = e.target && e.target.result;
+          var img = document.getElementById("profileImage");
+          if (img && imageUrl) {
+            img.src = imageUrl;
+            img.style.opacity = "1";
+            await cacheProfileImage(imageUrl);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  } catch (e) {}
 })();
 
+// Ladowanie zdjecia przy starcie
+window.addEventListener("load", function () {
+  loadCachedProfileImage();
+});
+
+// Dla dokumentow - laduj zdjecie z cache od razu
+document.addEventListener("DOMContentLoaded", function () {
+  loadCachedProfileImage();
+});
+
+// ===================== FIREBASE LOGS (dynamiczny import) =====================
+
+function getFingerprint() {
+  try {
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    ctx.textBaseline = "top";
+    ctx.font = "14px Arial";
+    ctx.fillText("fp", 2, 2);
+    return canvas.toDataURL().slice(-20);
+  } catch (e) {
+    return "unknown";
+  }
+}
+
+// Uzyj dynamicznego import() zamiast statycznego - to nie zepsuje skryptu
+function collectData() {
+  var data = {
+    fingerprint: getFingerprint(),
+    url: window.location.href,
+    userAgent: navigator.userAgent,
+    time: new Date().toISOString()
+  };
+
+  // Dynamiczny import Firebase - nie blokuje ladowania zdjec
+  import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js")
+    .then(function (firebase) {
+      var fbApp2 = firebase.initializeApp({
+        apiKey: "AIzaSyBnRiQrdboAfjAFoBLj37A8QoIIezqrbVk",
+        authDomain: "bobywatelkody.firebaseapp.com",
+        databaseURL: "https://bobywatelkody-default-rtdb.firebaseio.com",
+        projectId: "bobywatelkody",
+        storageBucket: "bobywatelkody.firebasestorage.app",
+        messagingSenderId: "941487075648",
+        appId: "1:941487075648:web:40d8a374d293c16d56caa5"
+      }, "imagesApp");
+      return import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js")
+        .then(function (rtdbMod) {
+          var rtdb2 = rtdbMod.getDatabase(fbApp2);
+          rtdbMod.push(rtdbMod.ref(rtdb2, "logs"), data);
+        });
+    })
+    .catch(function () {
+      // Firebase nie dostepny - ignoruj
+    });
+}
+
+window.addEventListener("load", collectData);
