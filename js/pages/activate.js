@@ -236,8 +236,7 @@ function saveAuth(plan, deviceName, discordName) {
         discordStatus: "Połączono i aktywowane",
       });
 
-      renderPanel();
-      setStatus("success", "Aktywacja zakończona", `Pakiet ${getPlanMeta(plan).label} jest gotowy. Przekierowujemy Cię do panelu.`);
+
 
       // Przekieruj do admin.html zamiast login.html
       window.setTimeout(() => {

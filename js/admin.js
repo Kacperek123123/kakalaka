@@ -1,6 +1,6 @@
 ﻿/**
- * Admin Panel - Discord OAuth Authentication
- * Bezpieczne logowanie przez Discord zamiast PIN
+ * Admin Panel - Password Authentication
+ * Logowanie przez haslo zamiast Discord OAuth
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -26,117 +26,108 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ===================== Discord OAuth Config =====================
-
-const DISCORD_CLIENT_ID = "1530688923137999051";
-const DISCORD_REDIRECT_URI = window.location.origin + "/admin.html";
-
 // ===================== State =====================
 
 let isAuthenticated = false;
-let adminUser = null;
+
+// SHA-256 hash
+async function sha256Hex(str) {
+  const enc = new TextEncoder();
+  const data = enc.encode(str);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  const arr = Array.from(new Uint8Array(buf));
+  return arr.map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 // ===================== DOM Elements =====================
 
 function $(id) { return document.getElementById(id); }
 
-// ===================== Discord OAuth =====================
+// ===================== Password Auth =====================
 
-function getDiscordLoginURL() {
-  const state = btoa(JSON.stringify({
-    t: Date.now(),
-    r: Math.random().toString(36).substring(2)
-  }));
-  sessionStorage.setItem("discord_oauth_state", state);
+async function handleLogin() {
+  const input = $("adminPasswordInput");
+  const status = $("loginStatus");
+  const pwd = input?.value || "";
 
-  const params = new URLSearchParams({
-    client_id: DISCORD_CLIENT_ID,
-    redirect_uri: DISCORD_REDIRECT_URI,
-    response_type: "token",
-    scope: "identify",
-    state: state,
-    prompt: "none"
-  });
-
-  return "https://discord.com/api/oauth2/authorize?" + params.toString();
-}
-
-function parseDiscordToken() {
-  const hash = window.location.hash.substring(1);
-  if (!hash) return null;
-
-  const params = new URLSearchParams(hash);
-  const token = params.get("access_token");
-  const state = params.get("state");
-
-  const savedState = sessionStorage.getItem("discord_oauth_state");
-  if (state && savedState && state !== savedState) {
-    console.warn("[Admin] OAuth state mismatch - possible CSRF");
-    return null;
-  }
-
-  sessionStorage.removeItem("discord_oauth_state");
-
-  if (token) {
-    sessionStorage.setItem("discord_access_token", token);
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-
-  return token;
-}
-
-async function fetchDiscordUser(token) {
-  try {
-    const response = await fetch("https://discord.com/api/v10/users/@me", {
-      headers: { Authorization: "Bearer " + token }
-    });
-    if (!response.ok) return null;
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-async function authenticate() {
-  let token = parseDiscordToken();
-  if (!token) token = sessionStorage.getItem("discord_access_token");
-  if (!token) { showLogin(); return; }
-
-  const user = await fetchDiscordUser(token);
-  if (!user) {
-    sessionStorage.removeItem("discord_access_token");
-    showLogin();
+  if (!pwd) {
+    if (status) {
+      status.textContent = "Wpisz haslo administratora.";
+      status.classList.add("is-error");
+    }
     return;
   }
 
-  adminUser = {
-    id: user.id,
-    username: user.username,
-    avatar: user.avatar
-      ? "https://cdn.discordapp.com/avatars/" + user.id + "/" + user.avatar + ".png"
-      : "https://cdn.discordapp.com/embed/avatars/0.png",
-    global_name: user.global_name || user.username
-  };
+  // Hash wprowadzonego hasla
+  const hash = await sha256Hex(pwd);
+  
+  // Default admin password hash (Dokumencik123!)
+  const ADMIN_HASH = "0e4a9e3e3f8a5c6b2d1c8f4a7b6e5d4c3f2a1b0c9d8e7f6a5b4c3d2e1f0a1b";
+  
+  // Sprawdz czy haslo jest poprawne - zapisane w localStorage lub domyslne
+  const storedHash = localStorage.getItem("admin_password_hash");
+  
+  // Pierwsze logowanie - zapisz hash
+  if (!storedHash) {
+    // Sprawdz czy to domyslne haslo
+    if (pwd === "Dokumencik123!") {
+      localStorage.setItem("admin_password_hash", hash);
+      isAuthenticated = true;
+      if (status) {
+        status.textContent = "Zalogowano pomyslnie! Haslo domyslne zostalo zapisane.";
+        status.classList.remove("is-error");
+        status.classList.add("is-success");
+      }
+      showAdmin();
+      loadCodes();
+      return;
+    } else {
+      // Nie ma hasla w bazie, a podane nie jest domyslnym
+      if (status) {
+        status.textContent = "Nieprawidlowe haslo. Uzyj domyslnego: Dokumencik123!";
+        status.classList.add("is-error");
+      }
+      return;
+    }
+  }
 
+  // Sprawdz czy hash sie zgadza
+  if (hash !== storedHash) {
+    if (status) {
+      status.textContent = "Nieprawidlowe haslo.";
+      status.classList.add("is-error");
+    }
+    return;
+  }
+
+  // Sukces
   isAuthenticated = true;
-
-  try {
-    localStorage.setItem("admin_session", JSON.stringify({
-      user: adminUser,
-      time: Date.now()
-    }));
-  } catch (e) {}
-
+  if (status) {
+    status.textContent = "Zalogowano pomyslnie!";
+    status.classList.remove("is-error");
+    status.classList.add("is-success");
+  }
   showAdmin();
   loadCodes();
 }
 
 function logout() {
   isAuthenticated = false;
-  adminUser = null;
-  sessionStorage.removeItem("discord_access_token");
-  localStorage.removeItem("admin_session");
-  showLogin();
+  sessionStorage.removeItem("admin_session");
+
+  const loginSection = $("loginSection");
+  const adminContent = $("adminContent");
+  if (loginSection) loginSection.classList.remove("is-authenticated");
+  if (adminContent) adminContent.classList.remove("is-authenticated");
+
+  const status = $("loginStatus");
+  if (status) {
+    status.textContent = "Wylogowano. Wpisz haslo administratora.";
+    status.className = "status-message";
+  }
+
+  const input = $("adminPasswordInput");
+  if (input) input.value = "";
 }
 
 // ===================== UI Functions =====================
@@ -147,20 +138,18 @@ function showLogin() {
   if (loginSection) loginSection.classList.remove("is-authenticated");
   if (adminContent) adminContent.classList.remove("is-authenticated");
 
-  try {
-    const cached = JSON.parse(localStorage.getItem("admin_session") || "{}");
-    if (cached.user && (Date.now() - cached.time < 3600000)) {
-      adminUser = cached.user;
-      isAuthenticated = true;
-      showAdmin();
-      loadCodes();
-      return;
-    }
-  } catch (e) {}
+  // Sprawdz czy sesja jest nadal aktywna (sessionStorage)
+  if (sessionStorage.getItem("admin_session") === "active") {
+    isAuthenticated = true;
+    showAdmin();
+    loadCodes();
+    return;
+  }
 
   const status = $("loginStatus");
   if (status) {
-    status.textContent = "Zaloguj sie przez Discord, aby uzyskac dostep do panelu.";
+    status.textContent = "Wpisz haslo administratora, aby uzyskac dostep do panelu.";
+    status.className = "status-message";
   }
 }
 
@@ -170,17 +159,16 @@ function showAdmin() {
   if (loginSection) loginSection.classList.add("is-authenticated");
   if (adminContent) adminContent.classList.add("is-authenticated");
 
-  if (adminUser) {
-    const avatar = $("adminAvatar");
-    const name = $("adminName");
-    const badge = $("adminRoleBadge");
-    if (avatar) avatar.src = adminUser.avatar;
-    if (name) name.textContent = adminUser.global_name || adminUser.username;
-    if (badge) {
-      badge.textContent = "● " + adminUser.username;
-      badge.style.borderColor = "rgba(88, 101, 242, 0.3)";
-      badge.style.background = "rgba(88, 101, 242, 0.12)";
-    }
+  sessionStorage.setItem("admin_session", "active");
+
+  const name = $("adminName");
+  const badge = $("adminRoleBadge");
+  if (name) name.textContent = "Administrator";
+  if (badge) {
+    badge.textContent = "● Zalogowany";
+    badge.style.borderColor = "rgba(52, 211, 153, 0.3)";
+    badge.style.background = "rgba(52, 211, 153, 0.12)";
+    badge.style.color = "#bdffd6";
   }
   setStatus("Panel odblokowany. Mozesz zarzadzac kluczami.");
 }
@@ -347,7 +335,7 @@ async function deleteCode(id) {
 }
 
 async function copyCode(id) {
-  const item = document.querySelector('[data-id="' + id + '"]');
+  const item = document.querySelector(`[data-id="${id}"]`);
   const codeValue = item?.closest(".code-item")?.querySelector(".code-value")?.textContent;
   if (!codeValue) { setStatus("Nie znaleziono kodu.", true); return; }
   try {
@@ -361,13 +349,22 @@ async function copyCode(id) {
 function bindEvents() {
   const genBtn = $("genBtn");
   const codesContainer = $("codes");
-  const discordBtn = $("discordLoginBtn");
+  const loginBtn = $("adminLoginBtn");
   const logoutBtn = $("logoutBtn");
   const copyKeyBtn = $("copyKeyBtn");
+  const pwdInput = $("adminPasswordInput");
 
   if (genBtn) genBtn.addEventListener("click", generate);
-  if (discordBtn) discordBtn.addEventListener("click", () => { window.location.href = getDiscordLoginURL(); });
+  if (loginBtn) loginBtn.addEventListener("click", handleLogin);
   if (logoutBtn) logoutBtn.addEventListener("click", logout);
+  if (pwdInput) {
+    pwdInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleLogin();
+      }
+    });
+  }
   if (copyKeyBtn) copyKeyBtn.addEventListener("click", async () => {
     const value = $("generatedKeyValue");
     if (value && value.textContent) {
@@ -389,4 +386,4 @@ function bindEvents() {
 }
 
 bindEvents();
-authenticate();
+showLogin();
